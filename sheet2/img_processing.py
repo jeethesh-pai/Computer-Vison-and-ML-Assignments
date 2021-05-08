@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-#
+########################################
 # Task 5
-#
+#########################################
 
 import numpy as np
 import cv2
@@ -20,9 +20,6 @@ def showImage(img, show_window_now=True):
         plt.show()
     return plt_img
 
-
-# Create an empty image (remove this when image loading works)
-img = np.zeros((10, 10, 3), dtype=np.uint8)
 
 # TODO: Load the image "img/hummingbird_from_pixabay.png" with OpenCV (`cv2`) to the variable `img` and show it with
 #  `showImage(img)`.
@@ -57,7 +54,12 @@ plt_img = showImage(img, False)
 hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 
-def img_update(hue_offset):
+def img_update(hue_offset: int) -> None:
+    """
+    offsets the given hsv image with given offset value
+    :param hue_offset: integer value which must be offset to hue of the image
+    :return: None -> sets the plt object with required offset_image. Use plt.show() to view the results
+    """
     print("Set hue offset to " + str(hue_offset))
     # TODO: Change the hue channel of the HSV image by `hue_offset`.
     offset_mask = np.zeros_like(hsv_img)
@@ -74,6 +76,31 @@ def img_update(hue_offset):
 ax_hue = plt.axes([0.1, 0.04, 0.8, 0.06])  # x, y, width, height
 slider_hue = Slider(ax=ax_hue, label='Hue', valmin=0, valmax=180, valinit=0, valstep=1)
 slider_hue.on_changed(img_update)
-
 # Now actually show the plot window
 plt.show()
+
+
+###############################
+# Task 6
+###############################
+def color_change_mask(image: np.ndarray, hue_offset: int, hue_range: tuple) -> np.ndarray:
+    """
+    changes color of given hue range with provided offset value
+    :param hue_range: a tuple (min_hue , max_hue) to pick the color to change in the given hsv image
+    :param hue_offset: hue_offset required to be changed on the image
+    :param image: image in HSV color space
+    :return: image with color changed
+    """
+    index = np.nonzero(np.logical_and(hue_range[0] < image[:, :, 0],  image[:, :, 0] < hue_range[1]))
+    i, j = index
+    for k in range(len(i)):
+        image[i[k], j[k], 0] += hue_offset
+    image[:, :, 0] = np.clip(image[:, :, 0], a_min=0, a_max=179)
+    return image
+
+
+im_new = color_change_mask(hsv_img, 150, hue_range=(0, 35))  # (0, 35) is min max hue range of orange in opencv library
+im_rgb = cv2.cvtColor(im_new, cv2.COLOR_HSV2RGB)
+plt.imshow(im_rgb)
+plt.show()
+
