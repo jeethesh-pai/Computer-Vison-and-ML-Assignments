@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from utils import PLACEHOLDER, from0_1to0_255asUint8, showImages, asUint8
+from utils import from0_1to0_255asUint8, showImages, asUint8
 from skimage.util import random_noise
 import matplotlib.pyplot as plt
 
