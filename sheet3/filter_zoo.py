@@ -20,8 +20,6 @@ def filter_sinc(img, mask_circle_diameter=40.0):
         img_length = img.shape
         for i in range(img.shape[2]):
             img_new[:, :, i] = filter_sinc_channel(img[:, :, i], mask_circle_diameter)
-            plt.imshow(img_new[:, :, i], cmap='gray')
-            plt.show()
     return img_new
 
 

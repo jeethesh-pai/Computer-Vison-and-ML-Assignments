@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -165,6 +161,8 @@ def filter_sobel(img, ksize=3):
     # TODO: Implement a sobel filter (x/horizontal + y/vertical) for the provided `img` with kernel size `ksize`.
     #  The values of the final (combined) image shall be normalized to the range [0, 1].
     #  Return the final result along with the two intermediate images.
+    kernel_x = np.ones((ksize, ksize), dtype=np.uint8)
+    kernel_y = np.ones_like(kernel_x)
     sobel_x = PLACEHOLDER(img)
     sobel_y = PLACEHOLDER(img)
     sobel = PLACEHOLDER(img)
