@@ -29,7 +29,7 @@ def flowMapToBGR(flow_map):
     hsv[:, :, 2] = cv2.normalize(magnitude, None, 0, 1, cv2.NORM_MINMAX)
     hsv[:, :, 1] = cv2.normalize(1 - hsv[:, :, 2], None, 0, 1, cv2.NORM_MINMAX)
     # Angle and vector size to HSV color
-    bgr = cv2.cvtColor(hsv.astype('float32'), cv2.COLOR_HSV2RGB)
+    bgr = cv2.cvtColor(hsv.astype('float32'), cv2.COLOR_HSV2BGR)
     return bgr
 
 
