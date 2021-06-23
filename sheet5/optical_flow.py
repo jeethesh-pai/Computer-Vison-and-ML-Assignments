@@ -57,7 +57,7 @@ def LucasKanadeFlow(frames, Ix, Iy, It, kernel_size, eigen_threshold=0.01):
 # max_iterations: maximum number of iterations allowed until convergence of the Horn-Schuck algorithm
 # epsilon: the stopping criterion for the difference when performing the Horn-Schuck algorithm
 # returns the Optical flow based on the Horn-Schunck algorithm
-def HornSchunckFlow(frames, Ix, Iy, It, max_iterations=1000, epsilon=0.002):
+def HornSchunckFlow(frames, Ix, Iy, It, max_iterations=100, epsilon=0.002):
     """
     :param frames: the two consecutive frames
     :param Ix: Image gradient in the x direction
@@ -69,8 +69,26 @@ def HornSchunckFlow(frames, Ix, Iy, It, max_iterations=1000, epsilon=0.002):
     """
     u = np.zeros_like(Ix)
     v = np.zeros_like(Ix)
-
-    return PLACEHOLDER_FLOW(frames)
+    lambda_factor = 20  # Euler lagrange factor in Horn Schunk optimization
+    lambda_matrix = 20 * np.ones_like(Ix)
+    for iteration in tqdm.tqdm(range(1, max_iterations)):
+        avg_mask = [[1/12, 1/6, 1/12],
+                    [1/6, 0, 1/6],
+                    [1/12, 1/6, 1/12]]
+        avg_mask = np.asarray(avg_mask, dtype=np.float64)
+        u_avg = cv2.filter2D(u, -1, avg_mask)
+        v_avg = cv2.filter2D(v, -1, avg_mask)
+        # By solving the constraint equation from the reference
+        # https://www.caam.rice.edu/~zhang/caam699/opt-flow/horn81.pdf pg 8
+        denominator = lambda_matrix ** 2 + Ix ** 2 + Iy ** 2
+        numerator = np.multiply(Ix, u_avg) + np.multiply(Iy, v_avg) + It
+        u_new = u_avg - np.divide(np.multiply(Ix, numerator), denominator)
+        v_new = v_avg - np.divide(np.multiply(Iy, numerator), denominator)
+        if np.all(u_new - u < epsilon) and np.all(v_new - v) < epsilon:
+            break
+        u = u_new
+        v = v_new
+    return np.dstack([u, v])
 
 
 # Load image frames
@@ -102,19 +120,25 @@ ft = cv2.filter2D(gray[0], cv2.CV_64F, tdk2) + cv2.filter2D(gray[1], cv2.CV_64F,
 #             ("Ground truth field", drawArrows(frames[0], flow_gt))], 1, False)
 #
 # # Lucas-Kanade flow
-flow_lk = LucasKanadeFlow(gray, fx, fy, ft, [6, 6])
-visualize_flow_lk = flowMapToBGR(flow_lk)
-arrow_lk = drawArrows(frames[0], flow_lk)
-plt.imshow(visualize_flow_lk)
-plt.show()
-error_lk = calculateAngularError(flow_lk, flow_gt)
-print(error_lk)
+
+# flow_lk = LucasKanadeFlow(gray, fx, fy, ft, [6, 6])
+# visualize_flow_lk = flowMapToBGR(flow_lk)
+# arrow_lk = drawArrows(frames[0], flow_lk)
+# plt.imshow(visualize_flow_lk)
+# plt.show()
+# error_lk = calculateAngularError(flow_lk, flow_gt)
+# print(error_lk)
+
 # plt.figure(figsize=(5, 8))
 # showImages([("LK flow - angular error: %.3f" % error_lk, flowMapToBGR(flow_lk)),
 #             ("LK field", drawArrows(frames[0], flow_lk))], 1, False)
 #
 # # Horn-Schunk flow
-# flow_hs = HornSchunckFlow(gray, fx, fy, ft)
+flow_hs = HornSchunckFlow(gray, fx, fy, ft)
+visualize_flow_hs = flowMapToBGR(flow_hs)
+arrow_hs = drawArrows(frames[0], flow_hs)
+plt.imshow(arrow_hs)
+plt.show()
 # error_hs = calculateAngularError(flow_hs, flow_gt)
 # plt.figure(figsize=(5, 8))
 # showImages([("HS flow - angular error %.3f" % error_hs, flowMapToBGR(flow_hs)),
