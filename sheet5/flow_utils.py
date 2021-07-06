@@ -37,56 +37,56 @@ def flowMapToBGR(flow_map):
 
 # TODO: Draw arrows depicting the provided `flow` on a 10x10 pixel grid.
 #       You may use `cv2.arrowedLine(..)`.
-def drawArrows(img, flow, arrow_color=(0, 255, 0)):
-    outimg = img.copy()
-
-    # Turn grayscale to rgb if needed
-    if len(outimg.shape) == 2:
-        outimg = np.stack((outimg,) * 3, axis=2)
-
-    # Get start and end coordinates of the optical flow
-    flow_start = np.stack(np.meshgrid(range(flow.shape[1]), range(flow.shape[0])), 2)
-    flow_end = (flow[flow_start[:, :, 1], flow_start[:, :, 0], :1] * 3 + flow_start).astype(np.int32)
-
-    # Threshold values
-    norm = np.linalg.norm(flow_end - flow_start, axis=2)
-    norm[norm < 2] = 0
-
-    # Draw all the nonzero values
-    nz = np.nonzero(norm)
-    for i in range(0, len(nz[0]), 100):
-        y, x = nz[0][i], nz[1][i]
-        cv2.arrowedLine(outimg,
-                        pt1=tuple(flow_start[y, x]),
-                        pt2=tuple(flow_end[y, x]),
-                        color=arrow_color,
-                        thickness=1,
-                        tipLength=.2)
-    return outimg
+# def drawArrows(img, flow, arrow_color=(0, 255, 0)):
+#     outimg = img.copy()
+#
+#     # Turn grayscale to rgb if needed
+#     if len(outimg.shape) == 2:
+#         outimg = np.stack((outimg,) * 3, axis=2)
+#
+#     # Get start and end coordinates of the optical flow
+#     flow_start = np.stack(np.meshgrid(range(flow.shape[1]), range(flow.shape[0])), 2)
+#     flow_end = (flow[flow_start[:, :, 1], flow_start[:, :, 0], :1] * 3 + flow_start).astype(np.int32)
+#
+#     # Threshold values
+#     norm = np.linalg.norm(flow_end - flow_start, axis=2)
+#     norm[norm < 2] = 0
+#
+#     # Draw all the nonzero values
+#     nz = np.nonzero(norm)
+#     for i in range(0, len(nz[0]), 100):
+#         y, x = nz[0][i], nz[1][i]
+#         cv2.arrowedLine(outimg,
+#                         pt1=tuple(flow_start[y, x]),
+#                         pt2=tuple(flow_end[y, x]),
+#                         color=arrow_color,
+#                         thickness=1,
+#                         tipLength=.2)
+#     return outimg
 
 # works with 10 x 10 pixels map
 # # TODO: Draw arrows depicting the provided `flow` on a 10x10 pixel grid.
 # #       You may use `cv2.arrowedLine(..)`.
-# def drawArrows(img, flow, arrow_color=(0, 255, 0)):
-#     out_img = img.copy()
-#     magnitude, ang = cv2.cartToPolar(flow[:, :, 0], flow[:, :, 1], angleInDegrees=False)
-#     # magnitude = cv2.normalize(magnitude, None, 0, 10, cv2.NORM_MINMAX)
-#     for i in range(0, flow.shape[0], 10):
-#         for j in range(0, flow.shape[1], 10):
-#             increment_x, increment_y = (10, 10)
-#             if i + 10 > flow.shape[0]:
-#                 increment_y = flow.shape[0] - i
-#             if j + 10 > flow.shape[1]:
-#                 increment_x = flow.shape[1] - j
-#             avg_magnitude = np.mean(magnitude[i: i + increment_y, j: j + increment_x])
-#             avg_angle = np.mean(ang[i: i + increment_y, j: j + increment_x])
-#             flow_start = (j, i)
-#             flow_end = (int(j + avg_magnitude * np.cos(avg_angle))
-#                         if int(j + avg_magnitude * np.cos(avg_angle)) > 0 else 0,
-#                         int(i + avg_magnitude * np.sin(avg_angle))
-#                         if int(i + avg_magnitude * np.sin(avg_angle)) > 0 else 0)
-#             out_img = cv2.arrowedLine(out_img, flow_start, flow_end, color=arrow_color, tipLength=0.2)
-#     return out_img
+def drawArrows(img, flow, arrow_color=(0, 255, 0)):
+    out_img = img.copy()
+    magnitude, ang = cv2.cartToPolar(flow[:, :, 0], flow[:, :, 1], angleInDegrees=False)
+    # magnitude = cv2.normalize(magnitude, None, 0, 10, cv2.NORM_MINMAX)
+    for i in range(0, flow.shape[0], 10):
+        for j in range(0, flow.shape[1], 10):
+            increment_x, increment_y = (10, 10)
+            if i + 10 > flow.shape[0]:
+                increment_y = flow.shape[0] - i
+            if j + 10 > flow.shape[1]:
+                increment_x = flow.shape[1] - j
+            avg_magnitude = np.mean(magnitude[i: i + increment_y, j: j + increment_x])
+            avg_angle = np.mean(ang[i: i + increment_y, j: j + increment_x])
+            flow_start = (j, i)
+            flow_end = (int(j + avg_magnitude * np.cos(avg_angle))
+                        if int(j + avg_magnitude * np.cos(avg_angle)) > 0 else 0,
+                        int(i + avg_magnitude * np.sin(avg_angle))
+                        if int(i + avg_magnitude * np.sin(avg_angle)) > 0 else 0)
+            out_img = cv2.arrowedLine(out_img, flow_start, flow_end, color=arrow_color, tipLength=0.2)
+    return out_img
 
 
 # Calculate the angular error of an estimated optical flow compared to ground truth
