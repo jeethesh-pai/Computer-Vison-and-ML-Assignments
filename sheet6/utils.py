@@ -1,9 +1,9 @@
-
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-def showImage(img, show_window_now = True, _ax = None):
+
+def showImage(img, show_window_now=True, _ax=None):
     img, color_img = convertColorImagesBGR2RGB(img)
     if _ax is None:
         plt_img = plt.imshow(img, interpolation='antialiased', cmap=None if color_img else 'gray')
@@ -15,8 +15,9 @@ def showImage(img, show_window_now = True, _ax = None):
         plt.show()
     return plt_img
 
-def showImages(imgs, num_cols = None, show_window_now = True, transpose = False, spacing = None, padding = None):
-    '''
+
+def showImages(imgs, num_cols=None, show_window_now=True, transpose=False, spacing=None, padding=None):
+    """
     imgs:
         [image|('caption', image)|None, ...]
         list of images
@@ -33,7 +34,7 @@ def showImages(imgs, num_cols = None, show_window_now = True, transpose = False,
     padding:
         (int, int, int, int)
         left, bottom, right, top paddding
-    '''
+    """
     plt_imgs = []
     i = 0
     tmp_imgs = []
@@ -59,7 +60,6 @@ def showImages(imgs, num_cols = None, show_window_now = True, transpose = False,
         else:
             i += 1
         tmp_imgs.append(tmp)
-
 
     if num_cols is None:
         grid = (1, i)
@@ -95,14 +95,17 @@ def convertColorImagesBGR2RGB(img):
         return img_rgb, True
     return img, False
 
+
 def from0_1to0_255asUint8(float_img):
     img = float_img * 255
     return asUint8(img)
+
 
 def clip0_255asUint8(float_img):
     img = float_img.copy()
     np.clip(float_img, 0, 255, img)
     return asUint8(img)
+
 
 def asUint8(float_img):
     return float_img.astype(np.uint8)
@@ -111,11 +114,14 @@ def asUint8(float_img):
 def PLACEHOLDER(img):
     return np.zeros(img.shape, np.uint8)
 
+
 def PLACEHOLDER_IMG(img):
     return img.copy()
 
+
 def REPLACE_THIS(input):
     return input
+
 
 def REPLACE_THIS_MODEL(input):
     return 1
