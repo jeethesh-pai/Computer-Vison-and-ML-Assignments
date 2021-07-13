@@ -9,10 +9,10 @@ import dlib
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-
 from utils import *
 
 # Load images.
+image_dir = "E:/TU Braunschweig Data/Computer Vision and Machine Learning/Github_repo/sheet7/"
 src_img, dst_img = [convertColorImagesBGR2RGB(cv2.imread(p)) for p in ("img/face1.jpg", "img/face2.jpg")]
 
 if src_img.shape[1::-1] != dst_img.shape[1::-1]:
@@ -24,17 +24,17 @@ max_img_size = 512
 size = src_img.shape[1::-1]
 if max(size) > max_img_size:
     size = np.dot(size, max_img_size / max(size)).astype(np.int).tolist()
-    src_img, dst_img = [cv2.resize(img[..., :3], size) if img.shape[1::-1] != size else img for img in
-                        (src_img, dst_img)]
+    src_img, dst_img = [cv2.resize(img, tuple(size)) for img in (src_img, dst_img)]
 src_img = src_img[:, :-50]
 dst_img = dst_img[:, :-50]
 w, h = src_img.shape[1::-1]
 
 # Find 68 landmark dlib face model.
 predictor_file = "shape_predictor_68_face_landmarks.dat"
-predictor_path = "models/" + predictor_file
+predictor_path = "E:/TU Braunschweig Data/Computer Vision and Machine " \
+                 "Learning/Github_repo/sheet7//" + predictor_file
 if not os.path.isfile(predictor_path):
-    print("File not found: %s\nDownload from http://dlib.net/files/%s.bz2" % (predictor_path, predictor_file))
+    print("File not found: %s/nDownload from http://dlib.net/files/%s.bz2" % (predictor_path, predictor_file))
     exit()
 
 
@@ -47,25 +47,54 @@ def weighted_average(img1, img2, alpha=.5):
     # TODO: Compute and return the weighted average (linear interpolation) of the two supplied images. Use the
     #  interpolation factor `alpha` such that the function returns `img1` if `alpha` == 0, `img2` if `alpha` == 1,
     #  and the interpolation otherwise.
-    return cv2.addWeighted(img1, alpha, img2, 1 - alpha)
+    return cv2.addWeighted(img1, alpha, img2, 1 - alpha, 0.0)
+
+
+def rect_to_bb(rect):
+    # take a bounding predicted by dlib and convert it
+    # to the format (x, y, w, h) as we would normally do
+    # with OpenCV
+    x = rect.left()
+    y = rect.top()
+    w = rect.right() - x
+    h = rect.bottom() - y
+    # return a tuple of (x, y, w, h)
+    return x, y, w, h
+
+
+def shape_to_np(shape, dtype="int"):
+    # initialize the list of (x, y)-coordinates
+    coords = np.zeros((68, 2), dtype=dtype)
+    # loop over the 68 facial landmarks and convert them
+    # to a 2-tuple of (x, y)-coordinates
+    for i in range(0, 68):
+        coords[i] = (shape.part(i).x, shape.part(i).y)
+    # return the list of (x, y)-coordinates
+    return coords
 
 
 def get_face_landmarks(image, predictor_path=predictor_path):
     # TODO: Use the `dlib` library for "Face Landmark Detection".
-    #  The function shall return a numpy array of shape (68, 2), holding 68 larndmarks as 2D integer pixel position.
-    return REPLACE_THIS(np.zeros((0, 2), np.int))
-    #
-    # ???
-    #
+    #  The function shall return a numpy array of shape (68, 2), holding 68 landmarks as 2D integer pixel position.
+    # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor(predictor_path)
+    rect = detector(image, 1)
+    for (i, rectangle) in enumerate(rect):
+        shape = predictor(image, rectangle)
+        shape = shape_to_np(shape)
+    return shape
 
 
 def weighted_average_points(src_points, dst_points, alpha=.5):
-    # TODO: Compute and return the weighted average (linear interpolation) of the two sets of supplied points.
-    #  Use the interpolation factor `alpha` such that the function returns `start_points` if `alpha` == 0, `end_points` if `alpha` == 1, and the interpolation otherwise.
-    return REPLACE_THIS(src_points)
-    #
-    # ???
-    #
+    # TODO: Compute and return the weighted average (linear interpolation) of the two sets of supplied points. Use
+    #  the interpolation factor `alpha` such that the function returns `start_points` if `alpha` == 0, `end_points`
+    #  if `alpha` == 1, and the interpolation otherwise.
+    length = np.asarray([np.linalg.norm(dst_points[i] - src_points[i]) for i in range(68)])
+    slope = [np.arctan(dst_points[i][1] - src_points[i][1]) / (dst_points[i][0] - src_points[i][0]) for i in range(68)]
+    x = np.round(alpha * length * np.cos(slope), decimals=0) + src_points[:, 0]
+    y = np.round(alpha * length * np.sin(slope), decimals=0) + src_points[:, 1]
+    return np.asarray(list(zip(x, y)))
 
 
 # Warp each triangle from the `src_img` to the destination image.
@@ -76,9 +105,9 @@ def process_warp(src_img, result_img, tri_affines, dst_points, delaunay):
     # Indices to vertices. -1 if pixel is not in any triangle.
     triangle_indices = delaunay.find_simplex(pixel_coords)
 
-    # # DEBUG visualization of triangle surfaces.
-    # triangle_surfaces = np.reshape(triangle_indices, (pixel_coords[-1][1] - pixel_coords[0][1] + 1, pixel_coords[-1][0] - pixel_coords[0][0] + 1))
-    # showImage(triangle_surfaces.astype(np.uint8))
+    # # DEBUG visualization of triangle surfaces. triangle_surfaces = np.reshape(triangle_indices, (pixel_coords[-1][
+    # 1] - pixel_coords[0][1] + 1, pixel_coords[-1][0] - pixel_coords[0][0] + 1)) showImage(triangle_surfaces.astype(
+    # np.uint8))
 
     for simplex_index in range(len(delaunay.simplices)):
         coords = pixel_coords[triangle_indices == simplex_index]
@@ -123,9 +152,10 @@ src_points, dst_points = [get_face_landmarks(img) for img in (src_img, dst_img)]
 #
 
 def bilinear_interpolate(img, coords):
-    # TODO: Implement bilinear interpolation.
-    #  The function shall return an array of RGB values that correspond to the interpolated pixel colors in `img` at the positions in `coords`.
-    #  As the coords are floating point values, use bilinear interpolation, such that the RGB color for each position in `coords` is interpolated from 4 instead of just one pixels in `img`.
+    # TODO: Implement bilinear interpolation. The function shall return an array of RGB values that correspond to the
+    #  interpolated pixel colors in `img` at the positions in `coords`. As the coords are floating point values,
+    #  use bilinear interpolation, such that the RGB color for each position in `coords` is interpolated from 4
+    #  instead of just one pixels in `img`.
     return REPLACE_THIS([img[y, x] for i in range(coords.shape[1]) for x, y in (coords[:, i].astype(np.int),)])
     #
     # ???
