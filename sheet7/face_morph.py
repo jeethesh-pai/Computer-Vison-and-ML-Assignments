@@ -90,10 +90,14 @@ def weighted_average_points(src_points, dst_points, alpha=.5):
     # TODO: Compute and return the weighted average (linear interpolation) of the two sets of supplied points. Use
     #  the interpolation factor `alpha` such that the function returns `start_points` if `alpha` == 0, `end_points`
     #  if `alpha` == 1, and the interpolation otherwise.
-    length = np.asarray([np.linalg.norm(dst_points[i] - src_points[i]) for i in range(68)])
-    slope = [np.arctan(dst_points[i][1] - src_points[i][1]) / (dst_points[i][0] - src_points[i][0]) for i in range(68)]
+    length = np.asarray([np.linalg.norm(dst_points[j] - src_points[j]) for j in range(len(src_points))])
+    slope = [np.arctan(dst_points[j][1] - src_points[j][1]) / (dst_points[j][0] - src_points[j][0])
+             for j in range(len(src_points))]
     x = np.round(alpha * length * np.cos(slope), decimals=0) + src_points[:, 0]
     y = np.round(alpha * length * np.sin(slope), decimals=0) + src_points[:, 1]
+    indices = np.where(np.isnan(slope))
+    x[indices[0]] = src_points[indices[0], 0]
+    y[indices[0]] = src_points[indices[0], 1]
     return np.asarray(list(zip(x, y)))
 
 
@@ -147,9 +151,25 @@ src_points, dst_points = [get_face_landmarks(img) for img in (src_img, dst_img)]
 
 # TODO: Extend the `src_points` and `dst_points` arrays such that also the surrounding parts of the images are warped.
 #  Hint: The corners of both images shall note move when warping.
-#
-# ???
-#
+# Adding corners of image dimensions to the respective points. These points shall act as anchors for warping
+src_points = np.append(src_points, [[1, 1]], axis=0)
+src_points = np.append(src_points, [[w - 1, 1]], axis=0)
+src_points = np.append(src_points, [[(w - 1) // 2, 1]], axis=0)
+src_points = np.append(src_points, [[1, h - 1]], axis=0)
+src_points = np.append(src_points, [[1, (h - 1) // 2]], axis=0)
+src_points = np.append(src_points, [[w - 1, h - 1]], axis=0)
+src_points = np.append(src_points, [[(w - 1) // 2, h - 1]], axis=0)
+src_points = np.append(src_points, [[(w - 1), (h - 1) // 2]], axis=0)
+
+dst_points = np.append(dst_points, [[1, 1]], axis=0)
+dst_points = np.append(dst_points, [[w - 1, 1]], axis=0)
+dst_points = np.append(dst_points, [[(w - 1) // 2, 1]], axis=0)
+dst_points = np.append(dst_points, [[1, h - 1]], axis=0)
+dst_points = np.append(dst_points, [[1, (h - 1) // 2]], axis=0)
+dst_points = np.append(dst_points, [[w - 1, h - 1]], axis=0)
+dst_points = np.append(dst_points, [[(w - 1) // 2, h - 1]], axis=0)
+dst_points = np.append(dst_points, [[(w - 1), (h - 1) // 2]], axis=0)
+
 
 def bilinear_interpolate(img, coords):
     # TODO: Implement bilinear interpolation. The function shall return an array of RGB values that correspond to the
