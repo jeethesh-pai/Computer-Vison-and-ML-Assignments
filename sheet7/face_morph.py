@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import mediapipe as mp
 import os.path
 from scipy.spatial import Delaunay
 import cv2
 import dlib
+import math
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
@@ -144,6 +145,30 @@ def warp_image(src_img, src_points, dest_points):
 src_points, dst_points = [get_face_landmarks(img) for img in (src_img, dst_img)]
 
 
+# # Tensorflow version of the model
+# # The below function is replica of the github definition
+# # https://github.com/google/mediapipe/blob/374f5e2e7e818bde5289fb3cffa616705cec6f73/mediapipe/python/solutions/drawing_utils.py
+# def _normalized_to_pixel_coordinates(normalized_x: float, normalized_y: float, image_width: int, image_height: int):
+#     """Converts normalized value pair to pixel coordinates."""
+#     # Checks if the float value is between 0 and 1.
+#     def is_valid_normalized_value(value: float) -> bool:
+#         return (value > 0 or math.isclose(0, value)) and (value < 1 or
+#                                                           math.isclose(1, value))
+#
+#     if not (is_valid_normalized_value(normalized_x) and
+#             is_valid_normalized_value(normalized_y)):
+#         return None
+#     x_px = min(math.floor(normalized_x * image_width), image_width - 1)
+#     y_px = min(math.floor(normalized_y * image_height), image_height - 1)
+#     return x_px, y_px
+#
+#
+# mp_face_mesh = mp.solutions.face_mesh
+# with mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=2, min_detection_confidence=0.5) as face_mesh:
+#     results_src, results_dst = [face_mesh.process(img).multi_face_landmarks for img in (src_img, dst_img)]
+#
+# for i, landmark in enumerate(results_src):
+#     src_px = _normalized_to_pixel_coordinates(landmark.landmark.x, landmark.landmark.y, h, w)
 #
 # Task 2
 #
@@ -176,10 +201,39 @@ def bilinear_interpolate(img, coords):
     #  interpolated pixel colors in `img` at the positions in `coords`. As the coords are floating point values,
     #  use bilinear interpolation, such that the RGB color for each position in `coords` is interpolated from 4
     #  instead of just one pixels in `img`.
+    # given that coords are floating point values we round off them.
+    # coords = coords.T
+    # new_pixels = []
+    # for coord in coords:
+    #     x = coord[0]
+    #     y = coord[1]
+    #     if math.isclose(x, math.ceil(x)) and math.isclose(y, math.ceil(y)):
+    #         new_pixel = img[math.ceil(y), math.ceil(x), :]
+    #         new_pixels.append(new_pixel)
+    #     else:
+    #         x1 = math.floor(coord[0])
+    #         y1 = math.floor(coord[1])
+    #         x2 = math.ceil(coord[0])
+    #         y2 = math.ceil(coord[1])
+    #         # pixel values in the square
+    #         Ia = img[y1, x1, :]
+    #         Ib = img[y2, x1, :]
+    #         Ic = img[y2, x2, :]
+    #         Id = img[y1, x2, :]
+    #         wa = (x2 - x) * (y2 - y)
+    #         wc = (x - x1) * (y - y1)
+    #         wb = (x2 - x) * (y - y1)
+    #         wd = (x - x1) * (y2 - y)
+    #         Iab = Ia + (Ib - Ia) * (y - y1)
+    #         Icd = Id + (Ic - Id) * (y - y1)
+    #         # new_pixel = np.asarray(Iab + (Icd - Iab) * (x - x1), dtype=np.uint8)
+    #         new_pixel = np.asarray(Ia * wa + Ib * wb + Ic * wc + Id * wd, dtype=np.uint8)
+    #         new_pixels.append(new_pixel)
+    # return np.asarray(new_pixels)
     return REPLACE_THIS([img[y, x] for i in range(coords.shape[1]) for x, y in (coords[:, i].astype(np.int),)])
-    #
-    # ???
-    #
+
+# nearest neighbour approach
+# REPLACE_THIS([img[y, x] for i in range(coords.shape[1]) for x, y in (coords[:, i].astype(np.int),)])
 
 
 found_face_points = len(src_points) > 0 and len(dst_points) > 0
@@ -203,7 +257,7 @@ if found_face_points:
     imgAxs1[5].triplot(dst_points[:, 0], dst_points[:, 1], dst_delaunay.simplices.copy())
 
 imgs = []
-num_imgs = 16
+num_imgs = 4
 if found_face_points:
     for alpha in np.linspace(0, 1, num_imgs):
         print("progress: %.2f" % alpha)
